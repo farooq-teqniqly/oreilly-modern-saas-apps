@@ -1,0 +1,21 @@
+version: "3.4"
+services:
+  sqlserver:
+    container_name: sqlserver
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    ports:
+      - "9876:1433"
+    volumes:
+      - habit-db-volume:/var/lib/mssql/data
+    env_file:
+      - ./sqlserver/sqlserver.env
+  devenv:
+    container_name: devenv
+    build:
+      context: ./dev-env
+    volumes:
+      - ..:/workspace
+    stdin_open: true
+    tty: true
+volumes:
+  habit-db-volume: null
