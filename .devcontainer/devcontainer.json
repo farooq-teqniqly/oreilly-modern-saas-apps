@@ -21,7 +21,8 @@
         "kevin-chatham.aspnetcorerazor-html-css-class-completion",
         "syncfusioninc.blazor-vscode-extensions",
         "ms-dotnettools.vscode-dotnet-runtime",
-        "ms-dotnettools.blazorwasm-companion"
+        "ms-dotnettools.blazorwasm-companion",
+        "ms-dotnettools.csdevkit"
       ]
     }
   },
