@@ -10,7 +10,7 @@ namespace GoodHabits.HabitService.Tests
 {
     public class FakeTenantSettings
     {
-        public static TenantSettings TenantSettings => new TenantSettings
+        private readonly TenantSettings tenantSettings = new TenantSettings
             {
                 DefaultConnectionString = "Default Connection String",
                 Tenants = new[]
@@ -19,41 +19,77 @@ namespace GoodHabits.HabitService.Tests
                     new Tenant { TenantName = "Tenant2", ConnectionString = "Connection String 2" }
                 }
             };
+
+        private readonly IOptions<TenantSettings> options;
+        public FakeTenantSettings()
+        {
+            this.options = Substitute.For<IOptions<TenantSettings>>();
+            this.options.Value.Returns(this.tenantSettings);
+        }
+
+        public IOptions<TenantSettings> GetOptions() => this.options;
+
+        public Tenant GetTenant(string tenantName)
+        {
+            return this.tenantSettings.Tenants.Single(t => t.TenantName == tenantName);
+        }
+    }
+
+    public class FakeHttpContext
+    {
+        private IHttpContextAccessor httpContextAccessor;
+        private HttpContext httpContext;
+
+        public FakeHttpContext()
+        {
+            this.httpContextAccessor = Substitute.For<IHttpContextAccessor>();
+            this.httpContext = Substitute.For<HttpContext>();
+            this.httpContextAccessor.HttpContext.Returns(this.httpContext);
+        }
+
+        public void AddTenantHeader(string tenantName)
+        {
+            this.httpContext.Request.Headers.Returns(new HeaderDictionary { { "x-tenant", tenantName } });
+        }
+
+        public IHttpContextAccessor GetHttpContextAccessor()
+        {
+            return this.httpContextAccessor;
+        }
     }
     public class TenantServiceTests
     {
+        private readonly FakeHttpContext fakeHttpContext;
+        private readonly FakeTenantSettings fakeTenantSettings;
+
+        public TenantServiceTests()
+        {
+            this.fakeHttpContext = new FakeHttpContext();
+            this.fakeTenantSettings = new FakeTenantSettings();
+        }
+
         [Fact]
         public void GetConnectionString_ReturnsCorrectConnectionString()
         {
-            var options = Substitute.For<IOptions<TenantSettings>>();
-            options.Value.Returns(FakeTenantSettings.TenantSettings);
+            this.fakeHttpContext.AddTenantHeader("Tenant1");
 
-            var httpContextAccessor = Substitute.For<IHttpContextAccessor>();
-            var httpContext = Substitute.For<HttpContext>();
-            httpContextAccessor.HttpContext.Returns(httpContext);
-            httpContext.Request.Headers.Returns(new HeaderDictionary { { "x-tenant", "Tenant1" } });
+            var tenantService = new TenantService(this.fakeTenantSettings.GetOptions(), this.fakeHttpContext.GetHttpContextAccessor());
 
-            var tenantService = new TenantService(options, httpContextAccessor);
-
-            tenantService.GetConnectionString().Should().Be(FakeTenantSettings.TenantSettings.Tenants[0].ConnectionString);
+            tenantService.GetConnectionString().Should().Be(this.fakeTenantSettings.GetTenant("Tenant1").ConnectionString);
         }
 
         [Fact]
         public void GetTenant_ReturnsCorrectTenant()
         {
-            var options = Substitute.For<IOptions<TenantSettings>>();
-            options.Value.Returns(FakeTenantSettings.TenantSettings);
+            this.fakeHttpContext.AddTenantHeader("Tenant2");
 
-            var httpContextAccessor = Substitute.For<IHttpContextAccessor>();
-            var httpContext = Substitute.For<HttpContext>();
-            httpContextAccessor.HttpContext.Returns(httpContext);
-            httpContext.Request.Headers.Returns(new HeaderDictionary { { "x-tenant", "Tenant2" } });
+            var fakeTenantSettings = new FakeTenantSettings();
 
-            var tenantService = new TenantService(options, httpContextAccessor);
+            var tenantService = new TenantService(this.fakeTenantSettings.GetOptions(), this.fakeHttpContext.GetHttpContextAccessor());
 
             var tenant = tenantService.GetTenant();
 
-            tenant.Should().BeEquivalentTo(FakeTenantSettings.TenantSettings.Tenants[1]);
+            tenant.Should().BeEquivalentTo(this.fakeTenantSettings.GetTenant("Tenant2"));
         }
     }
 }
