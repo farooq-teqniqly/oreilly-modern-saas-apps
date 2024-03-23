@@ -1,62 +1,11 @@
 using Xunit;
-using NSubstitute;
-using Microsoft.Extensions.Options;
-using Microsoft.AspNetCore.Http;
 using FluentAssertions;
 using GoodHabits.HabitService.Services;
-using GoodHabits.Database.Entities;
+using GoodHabits.Database.Tests.Fakes;
 
-namespace GoodHabits.HabitService.Tests
+namespace GoodHabits.Database.Tests
 {
-    public class FakeTenantSettings
-    {
-        private readonly TenantSettings tenantSettings = new TenantSettings
-            {
-                DefaultConnectionString = "Default Connection String",
-                Tenants = new[]
-                {
-                    new Tenant { TenantName = "Tenant1", ConnectionString = "Connection String 1" },
-                    new Tenant { TenantName = "Tenant2", ConnectionString = "Connection String 2" }
-                }
-            };
-
-        private readonly IOptions<TenantSettings> options;
-        public FakeTenantSettings()
-        {
-            this.options = Substitute.For<IOptions<TenantSettings>>();
-            this.options.Value.Returns(this.tenantSettings);
-        }
-
-        public IOptions<TenantSettings> GetOptions() => this.options;
-
-        public Tenant GetTenant(string tenantName)
-        {
-            return this.tenantSettings.Tenants.Single(t => t.TenantName == tenantName);
-        }
-    }
-
-    public class FakeHttpContext
-    {
-        private IHttpContextAccessor httpContextAccessor;
-        private HttpContext httpContext;
-
-        public FakeHttpContext()
-        {
-            this.httpContextAccessor = Substitute.For<IHttpContextAccessor>();
-            this.httpContext = Substitute.For<HttpContext>();
-            this.httpContextAccessor.HttpContext.Returns(this.httpContext);
-        }
-
-        public void AddTenantHeader(string tenantName)
-        {
-            this.httpContext.Request.Headers.Returns(new HeaderDictionary { { "x-tenant", tenantName } });
-        }
-
-        public IHttpContextAccessor GetHttpContextAccessor()
-        {
-            return this.httpContextAccessor;
-        }
-    }
+        
     public class TenantServiceTests
     {
         private readonly FakeHttpContext fakeHttpContext;
