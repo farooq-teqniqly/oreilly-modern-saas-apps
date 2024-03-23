@@ -22,7 +22,8 @@
         "syncfusioninc.blazor-vscode-extensions",
         "ms-dotnettools.vscode-dotnet-runtime",
         "ms-dotnettools.blazorwasm-companion",
-        "ms-dotnettools.csdevkit"
+        "ms-dotnettools.csdevkit",
+        "ms-azuretools.vscode-docker"
       ]
     }
   },
